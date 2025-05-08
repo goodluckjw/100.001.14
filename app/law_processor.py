@@ -225,12 +225,13 @@ def run_amendment_logic(find_word, replace_word):
             new_chunk = 덩어리.replace(find_word, replace_word)
             
             # 조사 처리 규칙 적용
-            ending_format = process_amendment_format(덩어리, find_word, replace_word, 각각, new_chunk)
-            
-            문장들.append(f"{loc_str} 중 "{덩어리}"{ending_format}")
+            josa_format = get_amendment_format(덩어리, find_word, replace_word)
+            문장들.append(f"{loc_str} 중 "{덩어리}"{josa_format.format(각각=각각, new_chunk=new_chunk)}")
+        
         prefix = chr(9312 + idx) if idx < 20 else str(idx + 1)
         amendment_results.append(f"{prefix} {law_name} 일부를 다음과 같이 개정한다.<br>" + "<br>".join(문장들))
     return amendment_results if amendment_results else ["⚠️ 개정 대상 조문이 없습니다."]
+
 
 def has_batchim(word):
     """단어의 마지막 글자가 받침을 가지고 있는지 확인"""
@@ -243,6 +244,7 @@ def has_batchim(word):
         return (char_code - 0xAC00) % 28 != 0
     return False
 
+
 def has_batchim_rieul(word):
     """단어의 마지막 글자가 ㄹ 받침인지 확인"""
     if not word:
@@ -253,6 +255,7 @@ def has_batchim_rieul(word):
         # ㄹ 받침은 종성 코드 8
         return (char_code - 0xAC00) % 28 == 8
     return False
+
 
 def find_josa(text, word):
     """검색어 뒤에 붙은 조사 찾기"""
@@ -265,8 +268,8 @@ def find_josa(text, word):
     if pos >= len(text):
         return ""
     
-    # 조사 후보
-    josas = ["을", "를", "과", "와", "이", "가", "이나", "나", "으로", "로"]
+    # 조사 후보 - 길이가 긴 것부터 체크
+    josas = ["으로", "이나", "으로", "로", "을", "를", "과", "와", "이", "가", "나"]
     
     # 검색어 뒤에 조사가 있는지 확인
     for josa in josas:
@@ -275,8 +278,9 @@ def find_josa(text, word):
     
     return ""
 
-def process_amendment_format(text, find_word, replace_word, 각각, new_chunk):
-    """조사 처리 규칙에 따라 적절한 개정문 문구 반환"""
+
+def get_amendment_format(text, find_word, replace_word):
+    """조사 처리 규칙에 따라 적절한 개정문 문구 포맷 반환"""
     josa = find_josa(text, find_word)
     has_batchim_B = has_batchim(replace_word)
     has_rieul_B = has_batchim_rieul(replace_word)
@@ -286,103 +290,103 @@ def process_amendment_format(text, find_word, replace_word, 각각, new_chunk):
     if josa == "을":
         if has_batchim_B:
             if has_rieul_B:
-                return f"을 {각각}\"{new_chunk}\"로 한다."
+                return "을 {{각각}}\"{new_chunk}\"로 한다."
             else:
-                return f"을 {각각}\"{new_chunk}\"으로 한다."
+                return "을 {{각각}}\"{new_chunk}\"으로 한다."
         else:
-            return f"을 {각각}\"{new_chunk}\"를로 한다."
+            return "을 {{각각}}\"{new_chunk}\"를로 한다."
     
     # 2. A를 (검색어에 조사 '를' 이 붙어있는 경우)
     elif josa == "를":
         if has_batchim_B:
-            return f"를 {각각}\"{new_chunk}\"을로 한다."
+            return "를 {{각각}}\"{new_chunk}\"을로 한다."
         else:
-            return f"를 {각각}\"{new_chunk}\"로 한다."
+            return "를 {{각각}}\"{new_chunk}\"로 한다."
     
     # 3. A과 
     elif josa == "과":
         if has_batchim_B:
             if has_rieul_B:
-                return f"과를 {각각}\"{new_chunk}\"로 한다."
+                return "과를 {{각각}}\"{new_chunk}\"로 한다."
             else:
-                return f"과를 {각각}\"{new_chunk}\"으로 한다."
+                return "과를 {{각각}}\"{new_chunk}\"으로 한다."
         else:
-            return f"과를 {각각}\"{new_chunk}\"와로 한다."
+            return "과를 {{각각}}\"{new_chunk}\"와로 한다."
     
     # 4. A와
     elif josa == "와":
         if has_batchim_B:
-            return f"와를 {각각}\"{new_chunk}\"과로 한다."
+            return "와를 {{각각}}\"{new_chunk}\"과로 한다."
         else:
-            return f"와를 {각각}\"{new_chunk}\"로 한다."
+            return "와를 {{각각}}\"{new_chunk}\"로 한다."
     
     # 5. A이
     elif josa == "이":
         if has_batchim_B:
             if has_rieul_B:
-                return f"이를 {각각}\"{new_chunk}\"로 한다."
+                return "이를 {{각각}}\"{new_chunk}\"로 한다."
             else:
-                return f"이를 {각각}\"{new_chunk}\"으로 한다."
+                return "이를 {{각각}}\"{new_chunk}\"으로 한다."
         else:
-            return f"이를 {각각}\"{new_chunk}\"가로 한다."
+            return "이를 {{각각}}\"{new_chunk}\"가로 한다."
     
     # 6. A가
     elif josa == "가":
         if has_batchim_B:
-            return f"가를 {각각}\"{new_chunk}\"이로 한다."
+            return "가를 {{각각}}\"{new_chunk}\"이로 한다."
         else:
-            return f"가를 {각각}\"{new_chunk}\"로 한다."
+            return "가를 {{각각}}\"{new_chunk}\"로 한다."
     
     # 7. A이나
     elif josa == "이나":
         if has_batchim_B:
             if has_rieul_B:
-                return f"이나를 {각각}\"{new_chunk}\"로 한다."
+                return "이나를 {{각각}}\"{new_chunk}\"로 한다."
             else:
-                return f"이나를 {각각}\"{new_chunk}\"으로 한다."
+                return "이나를 {{각각}}\"{new_chunk}\"으로 한다."
         else:
-            return f"이나를 {각각}\"{new_chunk}\"나로 한다."
+            return "이나를 {{각각}}\"{new_chunk}\"나로 한다."
     
     # 8. A나
     elif josa == "나":
         if has_batchim_B:
-            return f"나를 {각각}\"{new_chunk}\"이나로 한다."
+            return "나를 {{각각}}\"{new_chunk}\"이나로 한다."
         else:
-            return f"나를 {각각}\"{new_chunk}\"로 한다."
+            return "나를 {{각각}}\"{new_chunk}\"로 한다."
     
     # 9. A으로
     elif josa == "으로":
         if has_batchim_B:
             if has_rieul_B:
-                return f"으로를 {각각}\"{new_chunk}\"로로 한다."
+                return "으로를 {{각각}}\"{new_chunk}\"로로 한다."
             else:
-                return f"으로를 {각각}\"{new_chunk}\"으로로 한다."
+                return "으로를 {{각각}}\"{new_chunk}\"으로로 한다."
         else:
-            return f"으로를 {각각}\"{new_chunk}\"로로 한다."
+            return "으로를 {{각각}}\"{new_chunk}\"로로 한다."
     
     # 10. A로
     elif josa == "로":
         if has_batchim_A:
             if has_batchim_B:
                 if has_rieul_B:
-                    return f"로를 {각각}\"{new_chunk}\"로 한다."
+                    return "로를 {{각각}}\"{new_chunk}\"로 한다."
                 else:
-                    return f"로를 {각각}\"{new_chunk}\"으로로 한다."
+                    return "로를 {{각각}}\"{new_chunk}\"으로로 한다."
             else:
-                return f"로를 {각각}\"{new_chunk}\"로 한다."
+                return "로를 {{각각}}\"{new_chunk}\"로 한다."
         else:
             if has_batchim_B:
                 if has_rieul_B:
-                    return f"로를 {각각}\"{new_chunk}\"로 한다."
+                    return "로를 {{각각}}\"{new_chunk}\"로 한다."
                 else:
-                    return f"로를 {각각}\"{new_chunk}\"으로로 한다."
+                    return "로를 {{각각}}\"{new_chunk}\"으로로 한다."
             else:
-                return f"로를 {각각}\"{new_chunk}\"로 한다."
+                return "로를 {{각각}}\"{new_chunk}\"로 한다."
     
     # 기본 처리 (조사가 없거나 처리하지 않는 조사인 경우)
     else:
         # 기본 조사는 "을/를" 구분
         if has_batchim_B:
-            return f"을 {각각}\"{new_chunk}\"으로 한다."
+            return "을 {{각각}}\"{new_chunk}\"으로 한다."
         else:
-            return f"을 {각각}\"{new_chunk}\"를 한다."
+            return "을 {{각각}}\"{new_chunk}\"를 한다."
