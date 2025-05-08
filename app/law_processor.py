@@ -226,7 +226,7 @@ def run_amendment_logic(find_word, replace_word):
             
             # 조사 처리 규칙 적용
             josa_format = get_amendment_format(덩어리, find_word, replace_word)
-            문장들.append(f"{loc_str} 중 "{덩어리}"{josa_format.format(각각=각각, new_chunk=new_chunk)}")
+            문장들.append(f'{loc_str} 중 "{덩어리}"{josa_format.format(각각=각각, new_chunk=new_chunk)}')
         
         prefix = chr(9312 + idx) if idx < 20 else str(idx + 1)
         amendment_results.append(f"{prefix} {law_name} 일부를 다음과 같이 개정한다.<br>" + "<br>".join(문장들))
